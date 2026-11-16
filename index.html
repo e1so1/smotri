@@ -446,6 +446,41 @@ body{background:var(--bg);color:var(--ink)}
 .tg-note{margin:2px 0 4px;color:#a9a4cc;font-size:13px}
 .st-result .res-row b .i{width:16px;height:16px}
 
+/* ===== laconic flow ===== */
+.m-actions{grid-template-columns:1fr!important}
+.add-hint{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);z-index:3;display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none;text-align:center;transition:opacity .3s}
+.add-hint[hidden]{display:none}
+.add-hint b{font:800 22px var(--ui);letter-spacing:-.02em;color:#fff;text-shadow:0 2px 18px rgba(0,0,0,.6)}
+.add-hint span{font:600 14px var(--ui);color:#cfcbea;text-shadow:0 1px 10px rgba(0,0,0,.7)}
+.ah-pin{position:relative;width:72px;height:92px;margin-bottom:6px;animation:ahBob 1.8s var(--out) infinite}
+.ah-pin svg{position:relative;width:100%;height:100%;overflow:visible;filter:drop-shadow(0 0 18px rgba(38,240,255,.55))}
+.ah-pin svg path:first-child{fill:rgba(38,240,255,.16);stroke:var(--acc);stroke-width:3;stroke-linejoin:round}
+.ah-plus{fill:none;stroke:#fff;stroke-width:4.5;stroke-linecap:round}
+.ah-ring{position:absolute;left:50%;bottom:6px;width:46px;height:14px;margin-left:-23px;border-radius:50%;border:2px solid var(--acc);opacity:0;animation:ahRing 1.8s var(--out) infinite}
+@keyframes ahBob{0%,100%{transform:translateY(0)}45%{transform:translateY(-12px)}70%{transform:translateY(0)}}
+@keyframes ahRing{0%,60%{opacity:0;transform:scale(.4)}70%{opacity:.9}100%{opacity:0;transform:scale(1.6)}}
+.add-hint.compact .ah-pin{display:none}
+.add-hint.compact b{font-size:18px}
+@media (max-width:760px){.add-hint{top:36%}}
+.map-hint{display:none!important}
+#toasts{width:min(92vw,460px)}
+.toast{max-width:100%}
+.toast span{display:block;width:auto;height:auto;background:none}
+/* main export button doubles as progress bar */
+.cta.big{position:relative;overflow:hidden}
+.cta.big.busy{background:rgba(255,255,255,.08);color:#fff}
+.cta.big.busy::after{content:"";position:absolute;left:0;bottom:0;height:4px;width:calc(var(--p,0) * 100%);background:linear-gradient(90deg,#26F0FF,#7A2CFF,#FF3DCB);transition:width .25s linear}
+.prog-label{font:700 15px var(--ui);font-variant-numeric:tabular-nums}
+.st-result{display:block;font:600 13px var(--ui);color:#a9a4cc;text-align:center;animation:pop .3s var(--out)}
+.st-result .ok{color:var(--acc);display:inline-flex;align-items:center;gap:5px}
+.st-result .ok .i{width:16px;height:16px}
+.st-link{display:flex;align-items:center;justify-content:center;gap:7px;margin:0 auto;padding:6px 10px;border-radius:10px;font:700 13px var(--ui);color:#a9a4cc}
+.st-link .i{width:17px;height:17px}
+.st-link:hover{color:#fff;background:rgba(255,255,255,.06)}
+body.in-tg #stClose{visibility:hidden}
+.st-frame canvas{position:absolute;inset:0}
+@media (max-width:760px){.st-stage{overflow:hidden}.st-export{padding-top:10px}}
+
 </style>
 </head>
 <body>
@@ -461,7 +496,6 @@ body{background:var(--bg);color:var(--ink)}
       <input id="rSub" class="r-sub" placeholder="Подзаголовок, например «прогулка на вечер»" maxlength="90" aria-label="Подзаголовок" enterkeyhint="done">
     </div>
     <div class="m-actions">
-      <button class="m-btn" id="mPlay"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg><span>Смотреть</span></button>
       <button class="m-btn primary" id="mShare"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M16 5l-1.42 1.42-1.59-1.59V16h-1.98V4.83L9.42 6.42 8 5l4-4 4 4zm4 5v11c0 1.1-.9 2-2 2H6c-1.11 0-2-.9-2-2V10c0-1.11.89-2 2-2h3v2H6v11h12V10h-3V8h3c1.1 0 2 .89 2 2z"/></svg><span>Поделиться</span></button>
     </div>
     <div class="list-head"><span>Точки маршрута</span><span id="totals" class="totals"></span></div>
@@ -494,7 +528,10 @@ body{background:var(--bg);color:var(--ink)}
         <button id="zLoc" title="Где я"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg></button>
       </div>
     </div>
-    <div class="map-hint" id="mapHint">Нажмите на карту — поставлю точку. Тяните точку, чтобы передвинуть, а линию — чтобы добавить остановку по пути</div>
+    <div class="add-hint" id="addHint" hidden aria-hidden="true">
+      <div class="ah-pin"><i class="ah-ring"></i><svg viewBox="0 0 64 82"><path d="M32 70L15.03 52.97A24 24 0 1 1 48.97 52.97Z" /><path class="ah-plus" d="M32 24v24M20 36h24"/></svg></div>
+      <b>Нажмите на карту</b><span>чтобы поставить первую точку маршрута</span>
+    </div>
     <button id="btnStudio" class="cta d-only"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg><span>Анимация и видео</span></button>
     <div class="attrib"><a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> © <a href="https://www.openmaptiles.org/" target="_blank" rel="noopener">OpenMapTiles</a> © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></div>
   </main>
@@ -536,8 +573,8 @@ body{background:var(--bg);color:var(--ink)}
   </div>
   <div class="st-export" id="stExportBox">
     <button class="cta big" id="stExport"></button>
-    <div class="progress" id="stProg" hidden><div class="bar"><i></i></div><span></span></div>
     <div class="st-result" id="stResult" hidden></div>
+    <button class="st-link" id="stLink"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>Поделиться ссылкой на маршрут</button>
     <p class="fine" id="stNote"></p>
     <p class="fine d-only">Вертикальное видео 1080×1920 для Reels, Shorts, TikTok, VK Клипов и сторис. Собирается прямо в браузере, никуда не загружается.</p>
   </div>
@@ -1268,7 +1305,9 @@ function buildScene(route, set, legInfoFn) {
   const totalD = legs.reduce((a, L) => a + (L.d || 0), 0);
   const timed = legs.filter(L => L.t != null);
   const totalT = timed.length ? timed.reduce((a, L) => a + L.t, 0) : null;
-  const sc = { T, pts, legs, totalD, totalT, title: (route.title || '').trim(), sub: (route.sub || '').trim() };
+  const short = s => String(s || '').split(',')[0].trim();
+  const auto = n > 1 ? short(pts[0].name) + ' → ' + short(pts[n - 1].name) : '';
+  const sc = { T, pts, legs, totalD, totalT, title: (route.title || '').trim() || auto, sub: (route.sub || '').trim() };
   if (!n) { const c = { x: mercX(30.3158), y: mercY(59.9391), z: 12 }; sc.camAt = () => c; sc.tIntro = 0; sc.tOut = T; return sc; }
 
   const all = []; pts.forEach(p => all.push([p.X, p.Y])); legs.forEach(L => L.xy.forEach(q => all.push(q)));
@@ -2208,6 +2247,7 @@ function normalizeRoute(r) {
   const out = {
     title: String(r.title ?? ''), sub: String(r.sub ?? ''), theme: THEMES[r.theme] ? r.theme : (r.theme === 'vivid' ? 'neon' : 'aurora'),
     cache: r.cache && typeof r.cache === 'object' ? r.cache : {}, set: { ...DEFAULT_SET, ...(r.set || {}) },
+    cam: r.cam && isFinite(r.cam.x) && isFinite(r.cam.y) && isFinite(r.cam.z) ? { x: +r.cam.x, y: +r.cam.y, z: +r.cam.z } : null,
     points: (Array.isArray(r.points) ? r.points : []).filter(p => p && isFinite(p.lat) && isFinite(p.lon)).map(p => ({
       id: String(p.id || uid()), lat: +p.lat, lon: +p.lon, name: String(p.name || ''), caption: String(p.caption || ''),
       kind: KINDS[p.kind] ? p.kind : 'place', img: typeof p.img === 'string' && p.img.startsWith('data:image') ? p.img : null,
@@ -2220,7 +2260,9 @@ function normalizeRoute(r) {
 }
 let R = null;
 try { const raw = localStorage.getItem(LS_KEY); if (raw) R = JSON.parse(raw); } catch (_) { }
-R = normalizeRoute(R && Array.isArray(R.points) ? R : demoRoute());
+// the old demo route is not shown any more: start with an empty map and a hint
+const isDemo = r => r && r.title === 'Вечерний центр Петербурга' && r.points && r.points[0] && r.points[0].name === 'Адмиралтейская';
+R = normalizeRoute(R && Array.isArray(R.points) && !isDemo(R) ? R : { points: [], cam: R && R.cam });
 let SEL = null;
 
 const tiles = new TileCache();
@@ -2305,6 +2347,8 @@ function save() {
     const used = {};
     for (let i = 0; i < R.points.length - 1; i++) { const a = R.points[i], b = R.points[i + 1], M = MODES[a.mode]; if (M && M.router) { const k = legKey(M.router, a, b); if (R.cache[k]) used[k] = R.cache[k]; } }
     R.cache = used;
+    R.cam = { x: +map.cam.x.toFixed(7), y: +map.cam.y.toFixed(7), z: +map.cam.z.toFixed(2) };
+    if (TG.w) routeURL(true).then(u => { TG.url = u; });
     try { localStorage.setItem(LS_KEY, JSON.stringify(R)); }
     catch (e) {
       try { localStorage.setItem(LS_KEY, JSON.stringify({ ...R, points: R.points.map(p => ({ ...p, img: null })) })); } catch (_) { }
@@ -2550,7 +2594,7 @@ function addPoint(pl, o = {}) {
   if (o.fromMap) {
     JUST_ADDED = p.id; SEL = null; commit(); JUST_ADDED = null;
     const n = R.points.length;
-    toast(n === 1 ? 'Первая точка на месте. Нажмите ещё — маршрут проложится по улицам' : `Точка ${n} добавлена`, { key: 'add', replace: true, ms: 2600, action: 'Отменить', fn: () => { const i = R.points.indexOf(p); if (i >= 0) { R.points.splice(i, 1); commit(); } } });
+    toast(`Точка ${n} добавлена`, { key: 'add', replace: true, ms: 2600, action: 'Отменить', fn: () => { const i = R.points.indexOf(p); if (i >= 0) { R.points.splice(i, 1); commit(); } } });
     if (isPhone()) scrollCardIntoView(p.id);
     else setTimeout(() => scrollCardIntoView(p.id), 30);
     return p;
@@ -2698,6 +2742,17 @@ resEl.addEventListener('pointerdown', e => e.preventDefault());
 resEl.addEventListener('click', e => { const b = e.target.closest('.res'); if (b) pickResult(+b.dataset.i); });
 qEl.addEventListener('blur', () => setTimeout(hideResults, 150));
 
+// ---------- empty-map hint
+function updateAddHint() {
+  const el = $('#addHint'); if (!el) return;
+  const n = R.points.length;
+  el.hidden = VIEW || n >= 2;
+  el.classList.toggle('compact', n === 1);
+  el.querySelector('b').textContent = n === 1 ? 'Ещё точку!' : 'Нажмите на карту';
+  el.querySelector('span').textContent = n === 1 ? 'маршрут проложится по улицам сам' : 'чтобы поставить первую точку маршрута';
+  map.el.addEventListener('pointerdown', () => el.classList.add('pressed'), { once: true });
+}
+
 // ---------- list
 function legRowHTML(a, b, i) {
   return `<div class="leg" data-i="${i}"><div class="modes" role="group" aria-label="Как добраться">${MODE_ORDER.map(m => `<button class="${a.mode === m ? 'on' : ''}" data-mode="${m}" title="${MODES[m].label}" aria-label="${MODES[m].label}">${svgI(MODES[m].icon)}</button>`).join('')}</div><div class="leg-info">${legInfoText(legInfo(a, b, a.mode), a.mode)}</div></div>`;
@@ -2722,7 +2777,7 @@ function updateTotals() {
 function renderList() {
   const P = R.points, box = $('#points');
   $('#emptyHint').hidden = P.length > 0;
-  $('#mapHint').classList.toggle('hide', P.length >= 2);
+  updateAddHint();
   let h = '';
   P.forEach((p, i) => {
     h += `<div class="pcard ${p.id === SEL ? 'sel' : ''}" data-id="${p.id}">
@@ -2943,9 +2998,13 @@ function setSheet(st, anim = true) { if (!isPhone()) return; SHEET.state = st; a
   let lastPhone = isPhone();
   window.addEventListener('resize', () => { const ph = isPhone(); if (ph) setSheet(SHEET.state, false); else $('#panel').style.removeProperty('--sheet-y'); if (ph !== lastPhone) { lastPhone = ph; renderMarkers(); } });
 })();
-$('#mPlay').onclick = () => openStudio();
 $('#btnStudio').onclick = () => openStudio();
-$('#mShare').onclick = () => openStudio({ exportNow: true });
+$('#mShare').onclick = () => {
+  if (R.points.length < 2) { toast(R.points.length ? 'Поставьте ещё хотя бы одну точку' : 'Сначала поставьте точки — нажмите на карту'); return; }
+  // Telegram without file sharing: the video is made in the phone's browser (link must open right on tap)
+  if (TG.w && !canShareFiles()) { if (TG.url) { try { TG.w.openLink(TG.url, { try_instant_view: false }); toast('Открываю в браузере — видео соберётся там'); return; } catch (_) { } } openStudio(); return; }
+  openStudio({ exportNow: true });
+};
 
 // ================= SHARE LINK («Посмотреть в браузере») =================
 const b64url = u8 => { let s = ''; for (let i = 0; i < u8.length; i += 8192) s += String.fromCharCode(...u8.subarray(i, i + 8192)); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
@@ -2984,7 +3043,7 @@ const EXP = { busy: false, cancel: false, url: null, blob: null, name: '' };
 function renderOpts(scale) { return { scale, theme: R.theme, labels: R.set.labels, cards: R.set.cards, watermark: R.set.mark, cache: tiles, imgs: IMGS }; }
 let sceneAudioTimer = 0;
 function rebuildScene() {
-  ST.sc = buildScene(R, R.set, legInfo); ST.t = Math.min(ST.t, ST.sc.T); updateStudioUI();
+  ST.sc = buildScene(R, R.set, legInfo); ST.t = Math.min(ST.t, ST.sc.T); updateStudioUI(); setExportLabel();
   clearTimeout(sceneAudioTimer); sceneAudioTimer = setTimeout(syncAudio, 120);
 }
 function syncAudio() { if (ST.open && ST.playing && !ST.needTap && R.set.sfx && !EXP.busy && ST.t < ST.sc.T) audioStart(ST.sc, ST.t); else audioStop(); }
@@ -3044,9 +3103,16 @@ function setPlayIcon() {
   $('#stPlay').innerHTML = svgI(ST.playing ? 'pause' : 'play'); $('#stPlay').title = ST.playing ? 'Пауза (пробел)' : 'Смотреть (пробел)';
   $('#stSound').innerHTML = svgI(R.set.sfx ? 'sound' : 'mute'); $('#stSound').title = R.set.sfx ? 'Звук включён' : 'Звук выключен';
 }
+// the video is "ready" while the route and settings stay the same as when it was made
+const routeSig = () => JSON.stringify([R.points.map(p => [p.lat, p.lon, p.name, p.caption, p.kind, p.mode, p.img ? p.img.length : 0]), R.title, R.sub, R.theme, R.set]);
+const videoReady = () => !!(EXP.blob && EXP.sig === routeSig());
 function setExportLabel() {
   const b = $('#stExport'); if (EXP.busy) return;
-  b.innerHTML = isPhone() ? svgI('share') + 'Сделать видео и поделиться' : svgI('download') + 'Скачать MP4 · 1080×1920';
+  b.classList.remove('busy'); b.style.removeProperty('--p');
+  const ready = videoReady();
+  if (ready) b.innerHTML = (isPhone() || TG.w) ? (canShareFile() ? svgI('share') + 'Отправить видео' : TG.w ? svgI('share') + 'Открыть в браузере' : svgI('download') + 'Сохранить видео') : svgI('download') + 'Скачать ещё раз';
+  else b.innerHTML = TG.w && !canShareFiles() ? svgI('link') + 'Сделать видео в браузере' : isPhone() ? svgI('share') + 'Сделать видео и поделиться' : svgI('download') + 'Скачать MP4 · 1080×1920';
+  $('#stResult').hidden = !ready;
 }
 function chipsHTML(list, cur) { return list.map(([v, l]) => `<button data-v="${v}" class="${String(cur) === String(v) ? 'on' : ''}">${l}</button>`).join(''); }
 function updateStudioUI() {
@@ -3101,7 +3167,7 @@ document.addEventListener('keydown', e => {
   else if ((e.key === 'Delete' || e.key === 'Backspace') && SEL) { e.preventDefault(); removePoint(R.points.findIndex(q => q.id === SEL)); }
 });
 
-function setProg(u, text) { $('#stProg').hidden = false; $('#stProg i').style.width = (u * 100).toFixed(1) + '%'; $('#stProg span').textContent = text; }
+function setProg(u, text) { const b = $('#stExport'); b.style.setProperty('--p', clamp(u, 0, 1).toFixed(3)); b.innerHTML = `<span class="prog-label">${esc(text)}</span>`; }
 async function ensureFonts() {
   if (!document.fonts) return;
   const sample = 'Маршрут Route 0123 км';
@@ -3113,10 +3179,10 @@ async function ensureFonts() {
 function abortErr() { const e = new Error('cancel'); e.name = 'AbortError'; return e; }
 async function exportVideo() {
   if (EXP.busy) { EXP.cancel = true; return; }
-  if (TG.w && !canShareFiles()) { tgVideoHint(); return; }
+  if (TG.w && !canShareFiles()) { if (TG.url) { try { TG.w.openLink(TG.url, { try_instant_view: false }); return; } catch (_) { } } openInBrowserForVideo(); return; }
   audioUnlock();
   EXP.busy = true; EXP.cancel = false; audioStop();
-  const btn = $('#stExport'); btn.classList.add('busy'); btn.innerHTML = svgI('close') + 'Отменить';
+  const btn = $('#stExport'); btn.classList.add('busy'); EXP.noSound = false;
   $('#stResult').hidden = true; $('#stFrame').classList.add('rendering'); $('#studio').classList.remove('settings-open');
   try {
     if (RQ.pending.size) { setProg(0, 'Достраиваю маршрут по дорогам…'); await waitRoutes(20000); }
@@ -3156,7 +3222,7 @@ async function exportVideo() {
       if (!R.set.sfx) return null;
       setProg(.99, 'Добавляю звук…');
       const a = await encodeAudio(await renderSfxBuffer(sc));
-      if (!a) toast('Этот браузер не умеет записывать звук в видео — ролик будет без звука', { ms: 5000 });
+      if (!a) EXP.noSound = true;
       return a;
     };
     let blob = null;
@@ -3179,16 +3245,15 @@ async function exportVideo() {
     }
     if (missing > 3) toast('Часть карты не загрузилась — на видео могут быть пустые места. Проверьте интернет.', { ms: 6000 });
     const ext = blob.type.includes('webm') ? 'webm' : 'mp4';
-    const name = fileSlug(R.title) + '_smotri-kak-idem.' + ext;
+    const name = fileSlug(R.title || sc.title) + '_smotri-kak-idem.' + ext;
     setProg(1, 'Готово'); haptic('success');
     if (EXP.url) URL.revokeObjectURL(EXP.url);
-    EXP.url = URL.createObjectURL(blob); EXP.blob = blob; EXP.name = name;
+    EXP.url = URL.createObjectURL(blob); EXP.blob = blob; EXP.name = name; EXP.sig = routeSig();
     showResult(sc, ext);
     if (!isPhone()) { downloadBlob(blob, name); toast('Видео сохранено в «Загрузки»'); }
   } catch (e) {
     if (e && e.name === 'AbortError') toast('Сборка видео отменена');
     else { console.error(e); toast('Не получилось собрать видео: ' + (e && e.message || e), { ms: 7000 }); }
-    $('#stProg').hidden = true;
   } finally {
     EXP.busy = false; btn.classList.remove('busy'); setExportLabel();
     $('#stFrame').classList.remove('rendering');
@@ -3206,21 +3271,18 @@ async function shareVideo() {
   catch (e) { if (!(e && e.name === 'AbortError')) { toast('Не получилось открыть меню «Поделиться» — сохраняю файл'); downloadBlob(EXP.blob, EXP.name); } }
 }
 function showResult(sc, ext) {
-  const share = canShareFile(), b = EXP.blob;
-  $('#stProg').hidden = true;
-  $('#stResult').hidden = false;
-  $('#stResult').innerHTML = `<div class="res-row"><b>${svgI('check')}Видео готово</b><span>${(b.size / 1048576).toFixed(1).replace('.', ',')} МБ · ${ext.toUpperCase()} · ${sc.T} с${b.hasAudio ? ' · со звуком' : ''}</span></div>
-    <video src="${EXP.url}" controls playsinline muted loop></video>
-    <div class="res-actions">
-      ${share ? `<button class="btn-light primary wide" id="resShare">${svgI('share')}Отправить видео</button>` : ''}
-      <button class="btn-light ${share ? '' : 'wide primary'}" id="resSave">${svgI('download')}${isPhone() ? 'Сохранить' : 'Скачать ещё раз'}</button>
-      <button class="btn-light ${share ? '' : 'wide'}" id="resLink">${svgI('link')}Посмотреть в браузере</button>
-    </div>`;
-  if (share) $('#resShare').onclick = shareVideo;
-  $('#resSave').onclick = () => downloadBlob(EXP.blob, EXP.name);
-  $('#resLink').onclick = shareLink;
+  const b = EXP.blob;
+  $('#stResult').innerHTML = `<span class="ok">${svgI('check')}Видео готово</span> · ${(b.size / 1048576).toFixed(1).replace('.', ',')} МБ · ${sc.T} с${b.hasAudio ? '' : ' · без звука'}`;
+  setExportLabel();
 }
-$('#stExport').onclick = exportVideo;
+$('#stExport').onclick = () => {
+  if (EXP.busy) { EXP.cancel = true; return; }
+  if (!videoReady()) { exportVideo(); return; }
+  if (canShareFile()) shareVideo();
+  else if (TG.w) openInBrowserForVideo();
+  else downloadBlob(EXP.blob, EXP.name);
+};
+$('#stLink').onclick = shareLink;
 
 // ================= TELEGRAM MINI APP =================
 // Telegram passes its launch data in the address hash; outside Telegram nothing below runs
@@ -3230,7 +3292,7 @@ async function initTelegram() {
   if (!TG.on) return;
   await new Promise(res => { const s = document.createElement('script'); s.src = 'https://telegram.org/js/telegram-web-app.js'; s.onload = res; s.onerror = res; document.head.appendChild(s); setTimeout(res, 5000); });
   const w = window.Telegram && window.Telegram.WebApp; if (!w) return;
-  TG.w = w; document.body.classList.add('tg');
+  TG.w = w; document.body.classList.add('in-tg');
   const safe = f => { try { f(); } catch (_) { } };
   safe(() => w.ready()); safe(() => w.expand());
   safe(() => w.disableVerticalSwipes && w.disableVerticalSwipes()); // dragging the map must not close the app
@@ -3248,14 +3310,6 @@ async function openInBrowserForVideo() {
   const url = await routeURL(true);
   try { TG.w.openLink(url, { try_instant_view: false }); } catch (_) { location.href = url; }
 }
-function tgVideoHint() {
-  $('#stProg').hidden = true; $('#stResult').hidden = false;
-  const photos = R.points.some(p => p.img);
-  $('#stResult').innerHTML = `<div class="res-row"><b>${svgI('movie')}Видео — в браузере телефона</b></div>
-    <p class="fine tg-note">Telegram не разрешает мини-приложениям сохранять видео. Откроем этот маршрут в браузере телефона: ролик соберётся сам, и его можно будет сохранить в галерею или отправить куда угодно.${photos ? ' Фото к точкам в браузер не переносятся — их можно добавить там заново.' : ''}</p>
-    <div class="res-actions"><button class="btn-light primary wide" id="tgOpen">${svgI('share')}Открыть в браузере и сделать видео</button></div>`;
-  $('#tgOpen').onclick = openInBrowserForVideo;
-}
 
 // ================= START =================
 async function start() {
@@ -3269,7 +3323,9 @@ async function start() {
   applyTheme();
   renderList(); renderMarkers(); syncImages().then(() => map.invalidate());
   if (isPhone()) setSheet('peek', false);
-  fitRoute(false);
+  if (R.points.length) fitRoute(false);
+  else { if (R.cam) map.cam = { ...R.cam }; else map.cam.z = 13.4; map.invalidate(); }
+  if (TG.w) routeURL(true).then(u => { TG.url = u; });
   if (VIEW) openStudio({ noGesture: true, exportNow: autoVideo });
   if (VIEW && autoVideo) toast('Собираю видео — потом его можно сохранить или отправить', { ms: 5000 });
 }
