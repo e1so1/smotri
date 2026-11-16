@@ -1086,17 +1086,19 @@ function photonToPlace(f) {
 function nomToPlace(j) {
   const a = j.address || {};
   const road = a.road || a.pedestrian || a.footway || a.square || a.street || a.path;
+  // names that are web addresses are not useful as place names
+  const poi = j.name && !/(\.(ru|com|org|net|su|рф|info|me)\b)|www\.|https?:/i.test(j.name) ? j.name : '';
   let name, kind = 'place';
   if (a.house_number && road) { name = road + ', ' + a.house_number; kind = 'address'; }
-  else name = j.name || road || String(j.display_name || '').split(',')[0];
+  else name = poi || road || String(j.display_name || '').split(',')[0];
   const t = j.type;
   if (t === 'bus_stop' || t === 'platform') kind = 'bus';
   else if (t === 'station' || t === 'halt') kind = 'train';
   else if (t === 'subway_entrance') kind = 'metro';
   else if (t === 'tram_stop') kind = 'tram';
-  if (j.name && a.house_number && road && j.name !== name && kind === 'address') { kind = 'poi'; name = j.name; }
+  const addrName = road ? (a.house_number ? road + ', ' + a.house_number : road) : '';
   const sub = [kind !== 'address' && a.house_number && road ? road + ', ' + a.house_number : null, a.suburb || a.city_district, a.city || a.town || a.village].filter(Boolean).join(', ');
-  return { name, sub, kind, lat: +j.lat, lon: +j.lon };
+  return { name, sub, kind, lat: +j.lat, lon: +j.lon, addrName, poiName: poi && poi !== name ? poi : '' };
 }
 function classifyTransit(t) {
   if (t.station === 'subway' || t.railway === 'subway_entrance' || (t.subway === 'yes' && (t.railway === 'station' || t.public_transport === 'station'))) return 'metro';
@@ -2641,13 +2643,15 @@ async function geocodePoint(p) {
   if (p._gtok !== tok || !R.points.includes(p)) return;
   p.looking = false;
   const opts = [];
-  if (addr && addr.name) opts.push({ k: addr.kind === 'address' ? 'address' : (KINDS[addr.kind] ? addr.kind : 'place'), n: addr.name, la: +p.lat.toFixed(6), lo: +p.lon.toFixed(6), d: 0 });
+  if (addr && addr.addrName) opts.push({ k: 'address', n: addr.addrName, la: +p.lat.toFixed(6), lo: +p.lon.toFixed(6), d: 0 });
+  if (addr && addr.name && addr.name !== addr.addrName) opts.push({ k: addr.kind === 'address' ? 'address' : 'poi', n: addr.name, la: +p.lat.toFixed(6), lo: +p.lon.toFixed(6), d: 0 });
+  if (addr && addr.poiName) opts.push({ k: 'poi', n: addr.poiName, la: +p.lat.toFixed(6), lo: +p.lon.toFixed(6), d: 0 });
   for (const t of tr) opts.push({ k: t.kind, n: t.name, la: +t.lat.toFixed(6), lo: +t.lon.toFixed(6), d: Math.round(t.d) });
   p.near = opts.slice(0, 6);
   if (!p.nameSet) {
     const close = tr.find(t => t.d <= 35 && (t.kind === 'metro' || t.kind === 'train')) || tr.find(t => t.d <= 18);
     if (close) { p.name = close.name; p.kind = close.kind; }
-    else if (addr && addr.name) { p.name = addr.name; p.kind = addr.kind === 'address' ? 'address' : 'place'; }
+    else if (addr && (addr.addrName || addr.name)) { p.name = addr.addrName || addr.name; p.kind = addr.addrName ? 'address' : 'place'; }
     else p.name = p.name || 'Точка ' + (R.points.indexOf(p) + 1);
   }
   refreshCard(p); renderMarkers(); save(); if (ST.open) rebuildScene();
